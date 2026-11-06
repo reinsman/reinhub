@@ -1,0 +1,14 @@
+listen = ":9010" # 监听地址
+loglv = "debug"
+
+[database]
+db = "example"
+user = "app.example"
+password = "example-dev-password"
+endpoint = "127.0.0.1:33060"
+
+# 设置 listen 后启用 Hub gRPC。证书与私钥必须同时提供。
+[grpc]
+listen = ""
+cert_file = ""
+key_file = ""

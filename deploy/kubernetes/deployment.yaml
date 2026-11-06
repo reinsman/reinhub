@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: examplesrv
+  labels:
+    app: examplesrv
+spec:
+  selector:
+    matchLabels:
+      app: examplesrv
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: examplesrv
+    spec:
+      containers:
+      - name: examplesrv
+        image: docker.example.com/iam/examplesrv:v0.2.0
+        args: ["-conf=/conf/conf.toml"]
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 9010
+        env:
+        - name: TZ
+          value: "Asia/Shanghai"
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: conf-vol
+          mountPath: /conf
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+      nodeSelector:
+      imagePullSecrets:
+      volumes:
+        - name: conf-vol
+          configMap:
+            name: examplesrv-config

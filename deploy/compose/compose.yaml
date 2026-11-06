@@ -1,0 +1,23 @@
+name: examplesrv
+
+volumes:
+  mysql-data:
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: always
+    ports:
+      - "33060:3306"
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d

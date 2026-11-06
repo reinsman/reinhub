@@ -1,0 +1,9 @@
+{{- if eq .Values.service.type "NodePort" }}
+examplesrv 已通过 NodePort 暴露：
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://${NODE_IP}:{{ .Values.service.nodePort }}/self/ping"
+{{- else }}
+通过端口转发访问 examplesrv：
+  kubectl --namespace {{ .Release.Namespace }} port-forward service/{{ include "examplesrv.fullname" . }} 9010:{{ .Values.service.port }}
+  echo "http://127.0.0.1:9010/self/ping"
+{{- end }}

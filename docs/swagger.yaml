@@ -1,0 +1,166 @@
+basePath: /
+definitions:
+  ping.Pong:
+    properties:
+      commitid:
+        type: string
+      health:
+        type: integer
+    type: object
+  rsp.Rsp:
+    properties:
+      _cost:
+        type: integer
+      _err:
+        type: string
+      code:
+        type: integer
+      data: {}
+      msg:
+        type: string
+    type: object
+  user.DummyData:
+    properties:
+      echo:
+        type: integer
+    type: object
+  user.DummyReq:
+    properties:
+      id:
+        type: integer
+      panic:
+        type: boolean
+    required:
+    - id
+    type: object
+  user.UserInfoData:
+    properties:
+      account_id:
+        type: string
+      email:
+        type: string
+      uid:
+        type: integer
+      user_name:
+        type: string
+    type: object
+host: localhost:9010
+info:
+  contact:
+    email: support@examplesrv.com
+    name: xhb
+    url: https://chatgpt.com/
+  description: This is a sample template server.
+  license:
+    name: Private
+  title: go-examplesrv
+  version: 0.1.0
+paths:
+  /api/v1/dummy/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 演示参数绑定
+      parameters:
+      - description: 用户id
+        in: header
+        name: _HCID
+        required: true
+        type: integer
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 用户状态
+        enum:
+        - active
+        - inactive
+        - pending
+        in: query
+        name: status
+        type: string
+      - default: 0
+        description: 分页偏移
+        in: query
+        name: offset
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: limit
+        type: integer
+      - description: 请求体
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.DummyReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功code为0，其他code为失败,失败时data可能为nil
+          schema:
+            allOf:
+            - $ref: '#/definitions/rsp.Rsp'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.DummyData'
+              type: object
+      summary: Dummy
+      tags:
+      - /api/v1
+  /api/v1/user:
+    get:
+      description: 按 uid 或 name 查询用户，都不传则查当前登录用户
+      parameters:
+      - description: 用户ID
+        in: query
+        name: uid
+        type: integer
+      - description: 用户名
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/rsp.Rsp'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserInfoData'
+              type: object
+      summary: 获取用户信息
+      tags:
+      - /api/v1
+  /self/ping:
+    get:
+      consumes:
+      - application/json
+      description: ping ping ping
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功code为0，其他code为失败,失败时data可能为nil
+          schema:
+            allOf:
+            - $ref: '#/definitions/rsp.Rsp'
+            - properties:
+                data:
+                  $ref: '#/definitions/ping.Pong'
+              type: object
+      summary: Ping
+      tags:
+      - /self
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,88 @@
+replicaCount: 1
+
+image:
+  repository: docker.example.com:80/iam/examplesrv
+  pullPolicy: Always
+  # 为空时使用 Chart.yaml 中的 appVersion。
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: NodePort
+  port: 9010
+  nodePort: 30010
+  annotations: {}
+
+# 默认生成包含 conf.toml 的 Secret。生产环境建议预先创建 Secret，
+# 然后通过 existingSecret 引用；该 Secret 必须包含 secretKey 指定的键。
+config:
+  existingSecret: ""
+  secretKey: conf.toml
+  listen: ":9010"
+  logLevel: info
+  jwtKey: change-me
+  database:
+    name: example
+    user: app.example
+    password: change-me
+    endpoint: mysql:3306
+
+env:
+  timezone: Asia/Shanghai
+
+extraEnv: []
+
+resources:
+  limits:
+    cpu: "1"
+    memory: 1Gi
+  requests: {}
+
+startupProbe:
+  enabled: true
+  path: /self/ping
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 30
+
+readinessProbe:
+  enabled: true
+  path: /self/ping
+  initialDelaySeconds: 2
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+
+livenessProbe:
+  enabled: true
+  path: /self/ping
+  initialDelaySeconds: 10
+  periodSeconds: 20
+  timeoutSeconds: 2
+  failureThreshold: 3
+
+persistence:
+  enabled: true
+  mountPath: /app/data
+  # 保留现有 Kubernetes 清单的 hostPath 默认值。设为空时将创建 PVC；
+  # 也可以通过 existingClaim 直接引用已有 PVC。
+  hostPath: /var/lib/rancher/k3s/storage/airom/datafiles
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+terminationGracePeriodSeconds: 30
