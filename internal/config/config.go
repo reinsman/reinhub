@@ -1,16 +1,18 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
-	Listen string     `toml:"listen"`
-	Db     Database   `toml:"database"`
-	LogLv  string     `toml:"loglv"`
-	GRPC   GRPCConfig `toml:"grpc"`
+	Listen    string     `toml:"listen"`
+	Db        Database   `toml:"database"`
+	LogLv     string     `toml:"loglv"`
+	Directory string     `toml:"directory"`
+	GRPC      GRPCConfig `toml:"grpc"`
 }
 
 type Database struct {
@@ -20,18 +22,22 @@ type Database struct {
 	Endpoint string `toml:"endpoint"`
 }
 
-// GRPCConfig 启用时必须配置证书与私钥；不提供明文降级路径。
+// GRPCConfig 配置 Hub 的 gRPC/TLS 监听地址。
 type GRPCConfig struct {
-	Listen   string `toml:"listen"`
-	CertFile string `toml:"cert_file"`
-	KeyFile  string `toml:"key_file"`
+	Listen string `toml:"listen"`
 }
 
 func Load(path string) (*Config, error) {
 	cfg := &Config{}
-	_, err := toml.DecodeFile(path, cfg)
+	metadata, err := toml.DecodeFile(path, cfg)
 	if err != nil {
 		return nil, err
+	}
+	if metadata.IsDefined("agent_development") {
+		return nil, fmt.Errorf("agent_development has been removed; move directory to the top level and remove enabled")
+	}
+	if cfg.Directory == "" {
+		cfg.Directory = "~/.reinhub"
 	}
 	if cfg.LogLv == "" {
 		cfg.LogLv = "info"

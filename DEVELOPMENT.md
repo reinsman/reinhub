@@ -1,33 +1,26 @@
-# 脚手架 开发指南
+# reinhub 开发指南
 
-本文档说明如何在本地运行、理解项目结构、新增领域、处理跨领域协作、生成 API 文档和编写测试。
+当前 Hub 使用文件存储和 gRPC/TLS，暂不接入登录。下文保留部分 Gin/GORM 模板开发约定与业务示例，供后续重构参考；它们不是另一种 Hub 运行模式。当前启动、配置和实现边界以 [README.md](README.md) 为准。
 
 ## 开发环境
 
 - Go 1.25（推荐使用 `go.mod` 指定的 Go 1.25.1 toolchain）
-- MySQL 8.x
+- 当前 Hub 不依赖 MySQL；数据库工具与模板示例仍保留。
 - 可选：Docker、Docker Compose、swag CLI
 
 ## 本地运行
 
-配置文件默认位于 `bin/conf.toml`。仓库中的配置只用于本地开发，启动前请按实际环境修改数据库连接和 JWT key，不要将示例凭据用于其他环境。
+并排检出 `../proto`，在仓库根目录运行：
 
 ```bash
-# 启动示例 MySQL
-cp deploy/compose/.env.example deploy/compose/.env
-docker compose \
-  --env-file deploy/compose/.env \
-  -f deploy/compose/compose.yaml \
-  up -d mysql
+go run ./cmd/server -conf bin/conf.toml
 
-# 编译到 bin/examplesrv
+# 或编译后使用同一配置启动
 ./build.sh
-
-# 从 bin/ 目录加载 conf.toml 并启动
-./run.sh -debug
+./bin/reinhub -conf bin/conf.toml
 ```
 
-默认监听地址为 `:9010`，Swagger UI 地址为 `http://localhost:9010/self/swagger/index.html`。
+默认 HTTP 为 `127.0.0.1:9010`，gRPC/TLS 为 `127.0.0.1:9011`，健康检查为 `GET /api/health`。顶层 `directory` 默认使用 `~/.reinhub`，保存证书和权威状态；无须开启额外模式开关。
 
 ## 项目结构
 
@@ -96,8 +89,8 @@ cmd/server
 
 基本约束：
 
-- `app.New` 负责初始化数据库、组装路由并创建 HTTP Server。
-- `Application.Run` 负责 HTTP Server 的运行与优雅退出，返回时关闭底层数据库连接池。
+- `app.New` 负责组装 Hub 文件存储、HTTP API 和 gRPC/TLS 服务。
+- `Application.Run` 负责 HTTP/gRPC 服务运行与优雅退出，返回时释放存储锁。
 - `cmd/server` 只负责加载配置、初始化日志、信号与启动应用。
 - `internal/config` 只负责配置结构、解析与默认值，不保存全局配置状态。
 - 领域模型在包初始化阶段通过 `dbs.RegisterModels` 注册，建立数据库连接后由 `dbs.AutoMigrate` 统一迁移。
@@ -319,6 +312,8 @@ Done(c, data, err)
 `pkg/api/v1/<domain>` 之间的依赖也必须保持无环；出现循环引用时，按前文 Service 跨领域循环依赖的同样思路处理：将共享契约下沉到独立的基础包，或将组合响应放到更高层的用例包，不允许同级领域 API 包相互引用。
 
 ### HTTP 状态码与业务错误码
+
+以下 HTTP 200 约定适用于保留的 Gin 模板示例。当前 Hub Console API 使用标准 HTTP 状态码，错误响应为 `{"error":"..."}`，协议消息使用 protobuf JSON；这是已有 Console 契约，curl 用例见 [TESTING.md](TESTING.md)。Hub gRPC 使用标准 gRPC status。
 
 已识别并正常封装的业务响应统一返回 HTTP 200，包括参数错误、鉴权失败、数据库错误和领域业务错误。客户端必须通过响应体的 `code` 判断调用结果：
 

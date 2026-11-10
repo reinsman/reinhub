@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -32,8 +33,21 @@ endpoint = "localhost:3306"
 	if cfg.LogLv != "info" {
 		t.Fatalf("LogLv = %q, want %q", cfg.LogLv, "info")
 	}
+	if cfg.Directory != "~/.reinhub" {
+		t.Fatalf("Directory = %q, want ~/.reinhub", cfg.Directory)
+	}
 	if cfg.Db.Endpoint != "localhost:3306" {
 		t.Fatalf("Db.Endpoint = %q, want %q", cfg.Db.Endpoint, "localhost:3306")
+	}
+}
+
+func TestLoadRejectsRemovedModeConfiguration(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "conf.toml")
+	if err := os.WriteFile(path, []byte("[agent_development]\nenabled=true\ndirectory=\"old-data\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(path); err == nil || !strings.Contains(err.Error(), "move directory to the top level") {
+		t.Fatalf("old configuration must not silently select a different data directory: %v", err)
 	}
 }
 

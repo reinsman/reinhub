@@ -16,8 +16,7 @@ import (
 )
 
 var (
-	appConfPath  string // 配置文件路径
-	appDebugMode bool
+	appConfPath string // 配置文件路径
 )
 
 func init() {
@@ -30,7 +29,6 @@ func initRunTime() {
 
 func initFlag() {
 	flag.StringVar(&appConfPath, "conf", "./conf.toml", "app config's path")
-	flag.BoolVar(&appDebugMode, "debug", false, "run in debug mode")
 }
 
 func loadConfig() *config.Config {
@@ -93,12 +91,12 @@ func main() {
 	cfg := loadConfig()
 	initLog(cfg)
 
-	application, err := app.New(cfg, appDebugMode)
+	application, err := app.New(cfg)
 	if err != nil {
 		slog.Error("initialize application", "err", err)
 		panic(err)
 	}
-	slog.Info(fmt.Sprintf("server run on %s, debug: %v", cfg.Listen, appDebugMode))
+	slog.Info("Hub started", "http", cfg.Listen, "grpc", cfg.GRPC.Listen)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
